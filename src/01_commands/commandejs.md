@@ -270,6 +270,7 @@ program.parse();
 ```
 
 **使用示例：**
+
 ```bash
 node index.js create test.txt --content "Hello World"
 node index.js read test.txt
@@ -351,7 +352,7 @@ const rl = readline.createInterface({
 });
 
 function question(query) {
-  return new Promise(resolve => rl.question(query, resolve));
+  return new Promise(resolve => rl.(query, resolve));
 }
 
 program

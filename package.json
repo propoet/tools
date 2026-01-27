@@ -12,6 +12,8 @@
   "license": "ISC",
   "packageManager": "pnpm@10.26.1",
   "dependencies": {
-    "commander": "^14.0.2"
+    "@inquirer/prompts": "^8.2.0",
+    "commander": "^14.0.2",
+    "inquirer": "^13.2.1"
   }
 }
