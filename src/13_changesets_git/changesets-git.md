@@ -1,5 +1,7 @@
 # @changesets/git 从零开始学习指南
 
+> **结合使用**：CLI、changelog-github、git 的一体化流程与配置见同目录 **[changesets.md](./changesets.md)**。
+
 ## 📚 目录
 1. [什么是 @changesets/git](#什么是-changesetsgit)
 2. [安装与引入](#安装与引入)

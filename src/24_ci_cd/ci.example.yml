@@ -1,0 +1,36 @@
+# 最小 CI 示例：push/PR 时自动 安装依赖 + 跑测试
+# 用法：复制到你的项目根目录，并改名为 .github/workflows/ci.yml
+#
+# 若项目用 npm：删掉「安装 pnpm」步骤，把 pnpm install 改为 npm ci，pnpm test 改为 npm test
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 跑测试
+        run: pnpm test

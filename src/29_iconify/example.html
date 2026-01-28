@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iconify Web 组件示例</title>
+  <style>
+    iconify-icon {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+    }
+    body { font-family: sans-serif; padding: 1rem; }
+    .row { display: flex; gap: 1rem; align-items: center; margin: 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Iconify Web 组件示例</h1>
+  <p>需联网，图标从 Iconify API 按需加载。</p>
+
+  <div class="row">
+    <iconify-icon icon="mdi:home"></iconify-icon>
+    <span>mdi:home</span>
+  </div>
+  <div class="row">
+    <iconify-icon icon="heroicons:user" width="24" height="24"></iconify-icon>
+    <span>heroicons:user 24x24</span>
+  </div>
+  <div class="row">
+    <iconify-icon icon="mdi:alert" style="color: #ba3329; font-size: 48px"></iconify-icon>
+    <span>mdi:alert 红色 48px</span>
+  </div>
+  <div class="row">
+    <iconify-icon icon="bi:check2-circle" flip="horizontal"></iconify-icon>
+    <span>flip horizontal</span>
+  </div>
+  <div class="row">
+    <iconify-icon icon="bi:check2-circle" rotate="90deg"></iconify-icon>
+    <span>rotate 90deg</span>
+  </div>
+
+  <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+</body>
+</html>
