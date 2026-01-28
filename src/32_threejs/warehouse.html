@@ -6,7 +6,7 @@
   <title>3D 立体仓库布局图 - 库位标识</title>
   <style>
     * { margin: 0; box-sizing: border-box; }
-    body { overflow: hidden; font-family: "Microsoft YaHei", sans-serif; }
+    body { overflow: hidden; font-family: "Microsoft YaHei", "PingFang SC", sans-serif; }
     #canvas-container { position: relative; width: 100vw; height: 100vh; }
     #canvas-container canvas { display: block; width: 100%; height: 100%; }
     #labels {
@@ -21,32 +21,43 @@
     .slot-label {
       position: absolute;
       transform: translate(-50%, -50%);
-      padding: 2px 6px;
+      padding: 3px 8px;
       font-size: 10px;
-      font-weight: bold;
+      font-weight: 600;
       color: #fff;
-      background: rgba(0, 80, 160, 0.85);
-      border: 1px solid rgba(255,255,255,0.5);
-      border-radius: 3px;
+      background: linear-gradient(135deg, rgba(30, 90, 160, 0.92), rgba(20, 60, 120, 0.92));
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 4px;
       white-space: nowrap;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      backdrop-filter: blur(4px);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .slot-label.aisle {
-      background: rgba(40, 120, 40, 0.9);
+      background: linear-gradient(135deg, rgba(40, 140, 60, 0.92), rgba(30, 100, 45, 0.92));
       font-size: 11px;
+    }
+    .slot-label.highlight {
+      transform: translate(-50%, -50%) scale(1.15);
+      box-shadow: 0 0 12px rgba(100, 180, 255, 0.6);
+      z-index: 10;
     }
     #hud {
       position: absolute;
-      left: 12px;
-      top: 12px;
-      color: #fff;
-      background: rgba(0,0,0,0.5);
-      padding: 8px 12px;
-      border-radius: 6px;
+      left: 16px;
+      top: 16px;
+      color: rgba(255,255,255,0.95);
+      background: linear-gradient(145deg, rgba(20,25,35,0.82), rgba(15,20,30,0.88));
+      padding: 12px 16px;
+      border-radius: 10px;
       font-size: 12px;
       pointer-events: auto;
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
     }
-    #hud h3 { margin-bottom: 6px; font-size: 14px; }
+    #hud h3 { margin-bottom: 8px; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; }
+    #hud div { margin-top: 4px; opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -54,7 +65,7 @@
     <div id="labels"></div>
     <div id="hud">
       <h3>立体仓库布局</h3>
-      <div>拖动旋转 · 滚轮缩放</div>
+      <div>拖动旋转 · 滚轮缩放 · 悬停高亮库位</div>
       <div>库位格式: 排-列-深-层 (例 A-01-02-03)</div>
     </div>
   </div>
@@ -75,17 +86,21 @@
     const labelsEl = document.getElementById('labels');
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1a1a2e);
+    scene.background = new THREE.Color(0x0f1419);
+    scene.fog = new THREE.FogExp2(0x0f1419, 0.012);
 
     const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
     camera.position.set(28, 22, 28);
     camera.lookAt(0, 4, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    if (renderer.outputColorSpace !== undefined) renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.insertBefore(renderer.domElement, labelsEl);
 
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -94,33 +109,51 @@
     controls.minDistance = 10;
     controls.maxDistance = 80;
     controls.maxPolarAngle = Math.PI / 2 - 0.1;
+    controls.target.set(0, 4, 0);
 
-    const ambient = new THREE.AmbientLight(0x404060, 0.6);
+    // 三点光 + 半球光 (threejs-lighting)
+    const ambient = new THREE.AmbientLight(0x3a4055, 0.35);
     scene.add(ambient);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(15, 25, 15);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 100;
-    dirLight.shadow.camera.left = -25;
-    dirLight.shadow.camera.right = 25;
-    dirLight.shadow.camera.top = 25;
-    dirLight.shadow.camera.bottom = -25;
-    scene.add(dirLight);
+    const hemi = new THREE.HemisphereLight(0x6b8cae, 0x2a2520, 0.5);
+    hemi.position.set(0, 30, 0);
+    scene.add(hemi);
+    const keyLight = new THREE.DirectionalLight(0xffeedd, 1.0);
+    keyLight.position.set(15, 28, 15);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 100;
+    keyLight.shadow.camera.left = -28;
+    keyLight.shadow.camera.right = 28;
+    keyLight.shadow.camera.top = 28;
+    keyLight.shadow.camera.bottom = -28;
+    keyLight.shadow.bias = -0.0002;
+    keyLight.shadow.normalBias = 0.02;
+    keyLight.shadow.radius = 3;
+    scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xaaccff, 0.4);
+    fillLight.position.set(-12, 15, 12);
+    scene.add(fillLight);
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.25);
+    rimLight.position.set(0, 10, -15);
+    scene.add(rimLight);
 
     const floorW = 32;
     const floorD = 24;
     const floorGeom = new THREE.PlaneGeometry(floorW, floorD);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x2d3436 });
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: 0x1e262e,
+      roughness: 0.85,
+      metalness: 0.05
+    });
     const floor = new THREE.Mesh(floorGeom, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    const gridHelper = new THREE.GridHelper(floorW, 16, 0x444444, 0x333333);
-    gridHelper.position.y = 0.01;
+    const gridHelper = new THREE.GridHelper(floorW, 20, 0x3a4555, 0x252d38);
+    gridHelper.position.y = 0.02;
     scene.add(gridHelper);
 
     const slotLabelDivs = [];
@@ -133,15 +166,27 @@
     const RACK_DEPTH = 2;
     const RACK_GAP = 0.08;
 
+    // 共享几何与材质 (threejs-geometry / threejs-materials 性能建议)
+    const slotBoxGeom = new THREE.BoxGeometry(SLOT_W - 0.04, SLOT_H - 0.04, SLOT_D - 0.04);
+    const slotEdgesGeom = new THREE.EdgesGeometry(slotBoxGeom);
+    const slotMat = new THREE.MeshStandardMaterial({
+      color: 0x2d4a6f,
+      roughness: 0.55,
+      metalness: 0.15,
+      envMapIntensity: 0.4
+    });
+    const frameMat = new THREE.MeshStandardMaterial({
+      color: 0x4a4038,
+      roughness: 0.7,
+      metalness: 0.2
+    });
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x8a9aaa });
+
     function createRack(x0, z0, rowId) {
       const group = new THREE.Group();
       const fullW = RACK_COLS * SLOT_W + (RACK_COLS + 1) * RACK_GAP;
       const fullD = RACK_DEPTH * SLOT_D + (RACK_DEPTH + 1) * RACK_GAP;
       const fullH = RACK_LEVELS * SLOT_H + RACK_GAP;
-
-      const frameMat = new THREE.MeshStandardMaterial({ color: 0x6b5b4f });
-      const slotMat = new THREE.MeshStandardMaterial({ color: 0x3d5a80 });
-      const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 1 });
 
       for (let level = 0; level < RACK_LEVELS; level++) {
         for (let col = 0; col < RACK_COLS; col++) {
@@ -150,15 +195,14 @@
             const bz = RACK_GAP + depth * (SLOT_D + RACK_GAP) + SLOT_D / 2;
             const by = RACK_GAP + level * (SLOT_H + RACK_GAP) + SLOT_H / 2;
 
-            const boxGeom = new THREE.BoxGeometry(SLOT_W - 0.04, SLOT_H - 0.04, SLOT_D - 0.04);
-            const mesh = new THREE.Mesh(boxGeom, slotMat.clone());
+            const mesh = new THREE.Mesh(slotBoxGeom, slotMat);
             mesh.position.set(bx, by, bz);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            mesh.userData = { rowId, col: col + 1, depth: depth + 1, level: level + 1 };
             group.add(mesh);
 
-            const edgesGeom = new THREE.EdgesGeometry(boxGeom);
-            const edges = new THREE.LineSegments(edgesGeom, edgeMat);
+            const edges = new THREE.LineSegments(slotEdgesGeom, edgeMat);
             edges.position.copy(mesh.position);
             group.add(edges);
 
@@ -166,6 +210,7 @@
             const div = document.createElement('div');
             div.className = 'slot-label';
             div.textContent = labelId;
+            div.dataset.labelId = labelId;
             labelsEl.appendChild(div);
             slotLabelDivs.push({ div, mesh });
           }
@@ -185,7 +230,6 @@
     const fullW = RACK_COLS * SLOT_W + (RACK_COLS + 1) * RACK_GAP;
     const fullD = RACK_DEPTH * SLOT_D + (RACK_DEPTH + 1) * RACK_GAP;
     const margin = 3;
-    const aisle = 5;
 
     const rack1 = createRack(-floorW / 2 + margin, -floorD / 2 + margin, 'A');
     scene.add(rack1);
@@ -196,11 +240,41 @@
     const rack4 = createRack(floorW / 2 - margin - fullW, floorD / 2 - margin - fullD, 'D');
     scene.add(rack4);
 
+    // 悬停高亮框：单例发光框随射线命中库位移动 (不破坏材质复用)
+    const highlightBox = new THREE.Mesh(
+      new THREE.BoxGeometry(SLOT_W - 0.02, SLOT_H - 0.02, SLOT_D - 0.02),
+      new THREE.MeshBasicMaterial({
+        color: 0x3388ff,
+        transparent: true,
+        opacity: 0.25,
+        depthWrite: false,
+        wireframe: true
+      })
+    );
+    highlightBox.visible = false;
+    scene.add(highlightBox);
+    const highlightBoxWorldPos = new THREE.Vector3();
+
     const aisleDiv = document.createElement('div');
     aisleDiv.className = 'slot-label aisle';
     aisleDiv.textContent = '通道';
     labelsEl.appendChild(aisleDiv);
     slotLabelDivs.push({ div: aisleDiv, worldPos: new THREE.Vector3(0, 2, 0) });
+
+    // 射线检测悬停高亮 (threejs-interaction)，仅高亮标签以保持材质复用
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let hoveredMesh = null;
+    const slotMeshes = [];
+    scene.traverseVisible((obj) => {
+      if (obj.isMesh && obj.userData.rowId) slotMeshes.push(obj);
+    });
+
+    container.addEventListener('pointermove', (e) => {
+      const rect = container.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    });
 
     function projectToScreen(pos) {
       const v = pos.clone().project(camera);
@@ -231,18 +305,54 @@
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(slotMeshes, false);
+      const hit = intersects[0]?.object;
+      if (hit !== hoveredMesh) {
+        if (hoveredMesh) {
+          const entry = slotLabelDivs.find((e) => e.mesh === hoveredMesh);
+          if (entry) entry.div.classList.remove('highlight');
+        }
+        hoveredMesh = hit || null;
+        if (hoveredMesh) {
+          const entry = slotLabelDivs.find((e) => e.mesh === hoveredMesh);
+          if (entry) entry.div.classList.add('highlight');
+          hoveredMesh.getWorldPosition(highlightBoxWorldPos);
+          highlightBox.position.copy(highlightBoxWorldPos);
+          highlightBox.visible = true;
+        } else {
+          highlightBox.visible = false;
+        }
+      }
+
       renderer.render(scene, camera);
       updateLabels();
     }
     animate();
 
-    window.addEventListener('resize', () => {
+    function onResize() {
       const w = container.clientWidth;
       const h = container.clientHeight;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
-    });
+    }
+    window.addEventListener('resize', onResize);
+
+    // 资源释放示例 (threejs-fundamentals dispose)
+    // window.addEventListener('beforeunload', () => {
+    //   slotBoxGeom.dispose();
+    //   slotEdgesGeom.dispose();
+    //   slotMat.dispose();
+    //   frameMat.dispose();
+    //   edgeMat.dispose();
+    //   highlightBox.geometry.dispose();
+    //   highlightBox.material.dispose();
+    //   floorGeom.dispose();
+    //   floorMat.dispose();
+    //   renderer.dispose();
+    // });
   </script>
 </body>
 </html>
