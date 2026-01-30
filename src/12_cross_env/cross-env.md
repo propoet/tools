@@ -2,11 +2,12 @@
 
 ## 📚 目录
 1. [什么是 cross-env](#什么是-cross-env)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：如何跨平台设置环境变量](#原理如何跨平台设置环境变量)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -23,6 +24,17 @@ cross-env 是一个**跨平台设置环境变量的 CLI 工具**，在 npm scrip
 - `"build": "cross-env NODE_ENV=production webpack"`
 - `"test": "cross-env NODE_ENV=test jest"`
 - 团队里有人用 Windows、有人用 Unix，scripts 里统一用 cross-env 避免平台差异
+
+---
+
+## 原理：如何跨平台设置环境变量
+
+cross-env 的核心是：**解析命令行中的「KEY=VALUE」形式的参数，在当前进程（或子进程）的环境里设置这些变量，再执行用户传入的后续命令**。
+
+1. **参数解析**：从 `process.argv` 中识别 `KEY=value`、`KEY=value next-cmd` 等；在 Windows 上需兼容 `set KEY=value` 等写法，cross-env 统一成「先解析出 KEY/VALUE，再以跨平台方式设置」。
+2. **设置环境变量**：在 Node 里通过 `process.env[KEY] = value` 设置，然后 spawn 子进程执行后续命令时，子进程会继承当前进程的 env；或先构造新 env 对象再传给 spawn，确保子进程拿到的是「已注入变量」的环境。
+3. **跨平台**：Windows 下若直接写 `NODE_ENV=production node x.js` 会报错，因为 Windows 用 `set NODE_ENV=production`；cross-env 用 Node 作为中间层，不依赖 shell 语法，因此在 Windows/Unix 上行为一致。
+4. **执行后续命令**：把「KEY=value」之后的参数（如 `node`、`build.js`）作为要执行的命令与参数，用 `child_process.spawn` 执行，并继承（或传入）已修改的 env。
 
 ---
 

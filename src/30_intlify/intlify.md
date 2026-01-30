@@ -2,7 +2,8 @@
 
 ## 📚 目录
 1. [Intlify / Vue I18n 简介](#intlify--vue-i18n-简介)
-2. [@intlify/core-base 概览](#intlifycore-base-概览)
+2. [原理：消息解析与运行时编译](#原理消息解析与运行时编译)
+3. [@intlify/core-base 概览](#intlifycore-base-概览)
 3. [createI18n 与 I18n 实例](#createi18n-与-i18n-实例)
 4. [类型定义（DefineLocaleMessage 等）](#类型定义definelocalemessage-等)
 5. [Core 层 API（消息解析、fallback）](#core-层-apimessage-解析fallback)
@@ -24,6 +25,16 @@
 - **@intlify/unplugin-vue-i18n**：构建时插件，用于预编译语言包、解析 Vue SFC 中的 `<i18n>` 块、优化打包体积。
 
 本页重点：**@intlify/core-base** 的职责与常用 API，以及 **@intlify/unplugin-vue-i18n** 的配置与用法。
+
+---
+
+## 原理：消息解析与运行时编译
+
+**核心思路**：i18n 要解决两件事——**按 locale 和 key 取到文案**，以及**把带占位符、复数、插值等语法的消息编译成最终字符串**。Core 层与框架解耦，只负责「消息解析 + 编译」，Vue 层负责响应式、组件和依赖收集。
+
+- **消息解析**：消息通常是嵌套对象（如 `{ common: { ok: '确定' } }`），根据 path（如 `common.ok`）和当前 locale 解析出原始字符串；若当前语言缺失则按 fallback 链（如 zh-CN → zh → en）回退。
+- **消息编译**：消息可能是 `'Hello, {name}!'`、复数 `'no apples | one apple | {count} apples'` 等，core 提供编译器把这类模板转成可执行函数（MessageFunction），运行时传入变量得到最终文案。
+- **unplugin 的作用**：构建时预编译语言包、解析 SFC 的 `<i18n>` 块并注入，可把「运行时编译」转为「预编译」，减少运行时开销和包体积。
 
 ---
 

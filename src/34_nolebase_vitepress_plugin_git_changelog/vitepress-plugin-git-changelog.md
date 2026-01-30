@@ -2,7 +2,8 @@
 
 ## 📚 目录
 1. [什么是 Git Changelog 插件](#什么是-git-changelog-插件)
-2. [安装与项目要求](#安装与项目要求)
+2. [原理：Git 日志与构建时注入](#原理git-日志与构建时注入)
+3. [安装与项目要求](#安装与项目要求)
 3. [快速开始（两步集成）](#快速开始两步集成)
 4. [Vite 插件配置](#vite-插件配置)
 5. [主题与 UI 配置](#主题与-ui-配置)
@@ -33,6 +34,16 @@
 - 项目为 **VitePress** 站点
 - 项目在 **Git 仓库**内（插件依赖 Git 提交记录）
 - 若在 CI/CD 中构建，需保证能拉取到**完整 Git 历史**（见 [CI/CD 与部署](#cicd-与部署)）
+
+---
+
+## 原理：Git 日志与构建时注入
+
+**核心思路**：Changelog 与贡献者信息不存数据库，而是**在构建时对每个文档文件跑 Git 命令**，拿到该文件的 commit 历史、作者、时间，再生成结构化数据并注入到 VitePress 的页面数据或组件里，用户访问时直接渲染。
+
+- **数据来源**：对每个 Markdown 源文件路径执行 `git log`（如 `git log --follow --format=... -- path`），解析出 commit hash、作者、邮箱、日期、摘要等；可选 `git shortlog` 做贡献者统计。
+- **构建时执行**：Vite 插件在 `transform` 或 `generateBundle` 阶段挂载，在 Node 环境里执行 `child_process` 调用 `git`，把结果写入虚拟模块或注入到页面 frontmatter/data，这样最终 HTML 已包含 Changelog，无需运行时请求。
+- **与 VitePress 集成**：通过 VitePress 的 `extendsMarkdown` 或主题扩展，在页面中注入 Vue 组件占位；组件从 Vite 注入的 data 或虚拟模块读取 Changelog/贡献者列表并渲染。
 
 ---
 

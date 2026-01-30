@@ -2,11 +2,12 @@
 
 ## 📚 目录
 1. [什么是 Zod](#什么是-zod)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：schema 如何校验与类型推断](#原理schema-如何校验与类型推断)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -24,6 +25,17 @@ Zod 是 TypeScript/JavaScript 里流行的**运行时 schema 校验库**，用�
 - 校验从 .env、配置文件、请求体得到的数据，并导出为 TS 类型
 - 在 CLI/API 入口统一做“配置/入参合法性”检查
 - 与 dotenv、cosmiconfig 等组合：先加载再 `schema.parse(process.env)` 或 `schema.parse(config)`
+
+---
+
+## 原理：schema 如何校验与类型推断
+
+Zod 的核心是：**用「链式 schema」描述类型与规则，运行时对输入做校验（parse 抛错、safeParse 返回结果）；在 TypeScript 下 schema 可推导出类型（z.infer），实现「一份定义、校验+类型」两用**。
+
+1. **schema 描述**：`z.string()`、`z.object({})` 等返回 schema 对象，链式 `.min()`、`.max()`、`.optional()` 等挂规则；object 的 key 对应子 schema，形成树形结构，与 Joi 类似。
+2. **校验过程**：`schema.parse(input)` 递归检查类型与规则，不通过则抛 `ZodError`；`schema.safeParse(input)` 返回 `{ success, data }` 或 `{ success: false, error }`，不抛错。
+3. **类型推断**：在 TypeScript 中，`z.infer<typeof schema>` 可根据 schema 的结构推导出 TypeScript 类型；这样只需维护一份 schema，类型与运行时校验保持一致。
+4. **转换**：部分方法会在校验同时做转换（如 `z.coerce.number()` 把字符串转成数字）；parse 返回的可能是转换后的值。
 
 ---
 

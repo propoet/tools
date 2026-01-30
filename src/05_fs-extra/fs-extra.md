@@ -2,11 +2,12 @@
 
 ## 📚 目录
 1. [什么是 fs-extra](#什么是-fs-extra)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：在 fs 之上做了什么](#原理在-fs-之上做了什么)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -27,6 +28,17 @@ fs-extra 是 Node.js 中常用的**文件系统扩展库**，在原生 `fs` 之�
 - 判断路径是否存在：`pathExists(path)` 返回 boolean，不抛错
 - 读写 JSON 文件：`readJson` / `writeJson` / `outputJson`，一步解析或序列化
 - 写入文件且自动创建父目录：`outputFile('dist/a/b.txt', content)`，等价于先 ensureDir 再 writeFile
+
+---
+
+## 原理：在 fs 之上做了什么
+
+fs-extra 的核心是：**在 Node 原生 `fs` 上再包一层，统一返回 Promise、增加递归/存在性检查等扩展方法，并用 graceful-fs 降低 EMFILE 风险**。
+
+1. **Promise 化**：所有异步方法（如 `readFile`、`writeFile`）在「不传 callback」时返回 Promise，内部通过 `util.promisify` 或手动包装 `fs.xxx`，便于 async/await。
+2. **扩展方法实现**：`ensureDir` 递归检查并创建每一级父目录（等价于 mkdirp）；`copy` 递归读目录并写目标，遇目录再递归；`remove` 递归删目录（等价于 rimraf）；`pathExists` 调 `fs.access` 捕获 ENOENT 返回 false。
+3. **graceful-fs**：底层用 graceful-fs 替代 fs，在打开文件数过多时对 open 等调用做排队或重试，缓解 `EMFILE`（too many open files）错误。
+4. **直接透传 fs**：fs-extra 同时导出原生 fs 的所有同步/异步方法，因此可完全替代 `require('fs')`，无需混用两个模块。
 
 ---
 

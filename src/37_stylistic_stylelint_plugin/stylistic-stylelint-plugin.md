@@ -3,7 +3,8 @@
 ## 📚 目录
 
 1. [什么是 @stylistic/stylelint-plugin](#什么是-stylisticstylelint-plugin)
-2. [背景：Stylelint 16 移除的规则](#背景stylelint-16-移除的规则)
+2. [原理：Stylelint 插件与 AST 规则](#原理stylelint-插件与-ast-规则)
+3. [背景：Stylelint 16 移除的规则](#背景stylelint-16-移除的规则)
 3. [安装与基础配置](#安装与基础配置)
 4. [配置方式详解](#配置方式详解)
 5. [规则分类与速查](#规则分类与速查)
@@ -34,6 +35,16 @@
 | **规则前缀** | 必须使用 `@stylistic/` 命名空间 |
 | **自动修复** | 大部分规则支持 `--fix` |
 | **适用语法** | CSS、SCSS、Less、SugarSS 等 Stylelint 支持的语法 |
+
+---
+
+## 原理：Stylelint 插件与 AST 规则
+
+**核心思路**：Stylelint 先把 CSS 解析成 **AST**（抽象语法树），再让每条规则在 AST 上做检查或修复；插件就是「一组规则的集合」，每条规则声明自己关心哪些节点、在什么条件下报错或自动修复。
+
+- **解析与遍历**：Stylelint 用 PostCSS 解析 CSS（含 SCSS/Less 等需对应语法插件），得到 PostCSS AST；规则通过 `postcss.plugin` 或 Stylelint 的 rule 接口注册，在遍历节点时检查属性值、空格、换行等是否符合约定。
+- **风格规则**：@stylistic 的规则多为「可发现风格问题并可自动修复」：如颜色大小写、引号类型、缩进、分号有无等；规则内部访问 AST 节点，对比预期格式，若不匹配则 report 并可选 fix。
+- **与 Prettier 的关系**：风格类规则与 Prettier 有重叠；若已用 Prettier 格式化，可关闭部分 Stylelint 风格规则避免冲突；若不用 Prettier，用本插件可在 lint 阶段统一风格并 --fix。
 
 ---
 

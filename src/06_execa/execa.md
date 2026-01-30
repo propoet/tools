@@ -2,11 +2,12 @@
 
 ## 📚 目录
 1. [什么是 Execa](#什么是-execa)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：在 child_process 之上做了什么](#原理在-child_process-之上做了什么)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -27,6 +28,18 @@ Execa 是 Node.js 中流行的**子进程执行库**，在 `child_process` 之�
 - 管道串联多个命令（如 `git log | head`）
 - 读取命令的 stdout/stderr，做解析或打日志
 - 替代 `child_process.exec`/`spawn`，写法更简洁
+
+---
+
+## 原理：在 child_process 之上做了什么
+
+Execa 的核心是：**在 Node 的 `child_process.spawn` 之上封装，统一返回 Promise、处理 stdout/stderr 流、支持管道与本地 bin，并默认不经过 shell**。
+
+1. **底层仍是 spawn**：实际执行命令时调用 `child_process.spawn`（或 spawnSync），命令与参数以数组形式传入，默认 `shell: false`，避免 shell 注入。
+2. **Promise 化**：不传 callback 时，监听子进程的 `close`/`exit` 和 stdout/stderr 的 `data`/`end`，把结果或错误 resolve/reject 成 Promise，便于 async/await。
+3. **流收集**：将子进程的 stdout/stderr 读入 buffer 或流，进程结束时一并返回；支持 `pipe`、`inherit`、`ignore` 等 stdio 配置，管道时可将多个 execa 的 stdout 接到下一级的 stdin。
+4. **本地 bin**：通过 `preferLocal` 等选项，在 `node_modules/.bin` 中查找命令，相当于自动补全 npx 路径，便于在项目内直接执行依赖包提供的 CLI。
+5. **模板字符串 `$`**：将 `$`tag\`cmd\`` 解析为命令与参数数组（按空格与引号拆分），再内部调用 spawn，语法糖而已。
 
 ---
 

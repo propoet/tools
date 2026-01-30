@@ -2,11 +2,12 @@
 
 ## 📚 目录
 1. [什么是 Consola](#什么是-consola)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：日志如何分级与输出](#原理日志如何分级与输出)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -24,6 +25,17 @@ Consola 是 Node.js / 浏览器里用的**统一日志库**，提供 `log`、`in
 - CLI/构建工具里统一用 consola 替代 console，输出带图标和级别
 - 在测试或 CI 里切到“静默”或“仅 error”的 reporter
 - 与 Nuxt、Vite 插件等结合，这些生态里常用 consola
+
+---
+
+## 原理：日志如何分级与输出
+
+Consola 的核心是：**维护「级别 + 默认 reporter」，每次调用 log/info/warn/error 等时，将级别、参数、可选 tag 交给当前 reporter，由 reporter 决定是否输出、格式如何（终端带图标、JSON、静默等）**。
+
+1. **级别**：log、info、success、warn、error、debug 等对应不同级别；可配置「最低输出级别」，低于该级别的调用被 reporter 忽略（如生产只输出 error）。
+2. **Reporter**：reporter 是「把日志请求变成实际输出」的组件；默认的终端 reporter 会加图标、颜色、级别前缀；可换成 JSON reporter（输出 JSON 行）、静默 reporter（不输出），便于 CI/测试。
+3. **命名空间**：`consola.withTag('pkg')` 创建带 tag 的实例，输出时带上该 tag，便于区分来源；底层仍是同一个 consola 实例，只是给每条日志附上额外元数据。
+4. **与 console 的关系**：在不替换全局 console 的情况下，业务显式使用 `consola.log` 等；若需要可包装或替换 `console.*`，让遗留代码也走 consola 的 reporter。
 
 ---
 

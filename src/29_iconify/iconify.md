@@ -2,7 +2,8 @@
 
 ## 📚 目录
 1. [什么是 Iconify](#什么是-iconify)
-2. [图标命名规则](#图标命名规则)
+2. [原理：统一 API 与按需加载](#原理统一-api-与按需加载)
+3. [图标命名规则](#图标命名规则)
 3. [使用方式概览](#使用方式概览)
 4. [Web 组件（iconify-icon）](#web-组件iconify-icon)
 5. [React 组件](#react-组件)
@@ -33,6 +34,16 @@
 - 多图标集混用：Material、Heroicons、Tabler 等一套写法
 - 需要离线或内网：自建 API + addCollection 预置
 - 与 Tailwind/UnoCSS 等配合：用 CSS 类使用图标
+
+---
+
+## 原理：统一 API 与按需加载
+
+**核心思路**：图标集很多（Material、Heroicons、Font Awesome 等），若每套都整包引入会体积巨大。Iconify 的做法是：**统一命名（prefix:name）+ 中心 API 按图标 ID 返回 SVG 数据**，页面只请求用到的图标，避免打包整本图标集。
+
+- **统一命名**：用 `prefix:name`（如 `mdi:home`）唯一标识一枚图标，不同图标集只是 prefix 不同，调用方式一致。
+- **按需拉取**：组件渲染时根据 `icon` 属性向 Iconify API（或自建 API）请求该 ID 的 SVG 数据，拿到后再插入 DOM；未用到的图标不会请求、不占打包体积。
+- **离线与预置**：可把常用图标通过 `addCollection` 预置到内存，或自建 API 镜像，这样不依赖公网、首屏更快；构建时也可用插件把用到的图标内联进 bundle。
 
 ---
 

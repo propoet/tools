@@ -2,11 +2,12 @@
 
 ## 📚 目录
 1. [什么是 standard-version](#什么是-standard-version)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：如何从提交历史生成版本与 CHANGELOG](#原理如何从提交历史生成版本与-changelog)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -28,6 +29,17 @@ standard-version 是一个**基于 Conventional Commits 的自动发版工具**�
 ### 与 changesets 的区别
 - **standard-version**：根据**已有 git 提交**自动算版本和 CHANGELOG，适合“先提交、再发布”。
 - **changesets**：开发者**先写 changeset 文件**，再集中 version/publish，更适合 Monorepo 多包、需要精确控制每个包版本与 CHANGELOG 的场景。
+
+---
+
+## 原理：如何从提交历史生成版本与 CHANGELOG
+
+standard-version 的核心是：**读取 git 提交历史 → 按 Conventional Commits 解析出 feat/fix/breaking 等 → 根据规则决定 bump 类型（major/minor/patch）→ 更新 package.json version、生成或追加 CHANGELOG、打 git tag**。
+
+1. **读取提交**：从当前分支读取自上次 tag（或首次 commit）以来的提交信息，通常用 `git log` 或 git 库（如 simple-git）获取。
+2. **解析约定式提交**：按 Conventional Commits 解析每条提交的 type（feat、fix、BREAKING CHANGE 等）；feat → minor bump，fix → patch，BREAKING CHANGE 或 major 类型 → major bump；取「最高」bump 决定新版本号。
+3. **更新文件**：根据新版本号更新 package.json 的 version 字段；根据提交列表生成或追加 CHANGELOG.md（按 type 分组、格式化）。
+4. **打 tag 与 commit**：用新版本号打 git tag（如 `v1.2.0`），可选地自动 commit 上述变更（version + CHANGELOG），便于与 CI 的「发布前一步」结合。
 
 ---
 

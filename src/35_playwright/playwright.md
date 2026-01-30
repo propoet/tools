@@ -2,7 +2,8 @@
 
 ## 📚 目录
 1. [什么是 Playwright](#什么是-playwright)
-2. [安装与两种用法](#安装与两种用法)
+2. [原理：浏览器驱动与 Web-First 自动化](#原理浏览器驱动与-web-first-自动化)
+3. [安装与两种用法](#安装与两种用法)
 3. [Playwright Test（推荐 E2E）](#playwright-test推荐-e2e)
 4. [Playwright Library（自动化脚本）](#playwright-library自动化脚本)
 5. [Locators 与常用操作](#locators-与常用操作)
@@ -37,6 +38,16 @@ Playwright 是微软开源的**端到端测试与浏览器自动化**框架，�
 - 多浏览器/多项目矩阵测试
 - 截图、PDF、录屏、性能抓取（Library）
 - 文档站、后台的自动化巡检（Test）
+
+---
+
+## 原理：浏览器驱动与 Web-First 自动化
+
+**核心思路**：E2E 要控制真实浏览器执行操作并断言结果。Playwright 通过**与浏览器进程的协议通信**（如 CDP 或自研协议）驱动 Chromium/Firefox/WebKit，并在 API 层做「自动等待」和「Web-First 断言」，减少因时序导致的 flaky。
+
+- **浏览器驱动**：启动浏览器时带调试端口或 pipe，Node 侧通过 WebSocket/pipe 发送「导航」「点击」「填表」等指令，浏览器执行后返回结果；每个 test 或 context 可独立 browser/context，实现隔离与并行。
+- **自动等待**：如 `click()` 不是立刻发点击，而是先轮询直到元素可交互（visible、stable、enabled）、再点击，避免「元素还没出现就点了」；locator 的严格性（同一 selector 只匹配最新 DOM）也减少因 DOM 复用导致的误点。
+- **Web-First 断言**：`expect(locator).toHaveText(...)` 会重试直到条件成立或超时，而不是立刻断言一次就失败，符合「等界面稳定再判断」的 E2E 习惯。
 
 ---
 

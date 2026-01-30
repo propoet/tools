@@ -3,7 +3,8 @@
 ## 📚 目录
 
 1. [概述](#概述)
-2. [@tanstack/vue-query](#tanstackvue-query)
+2. [原理：服务端状态与客户端状态](#原理服务端状态与客户端状态)
+3. [@tanstack/vue-query](#tanstackvue-query)
 3. [@tanstack/vue-store](#tanstackvue-store)
 4. [两者关系与选型](#两者关系与选型)
 5. [参考链接](#参考链接)
@@ -21,6 +22,16 @@
 - **vue-store**：客户端状态（Client State）— 完全由当前应用控制，无需请求与缓存。
 
 二者可同时使用：Query 管接口数据，Store 管本地状态。
+
+---
+
+## 原理：服务端状态与客户端状态
+
+**核心思路**：前端状态分两类——**服务端状态**（来自接口，可能过期、被他人修改，需要缓存与失效策略）和**客户端状态**（仅本应用控制，如 UI 开关、表单草稿）。Vue Query 管前者，Store 管后者；二者在 Vue 里通过 Composition API 暴露，与响应式系统集成。
+
+- **Vue Query**：维护「查询 key → 数据 + 元数据（status、staleTime 等）」的缓存；请求前先查缓存，未过期则直接用，过期则后台重取（stale-while-revalidate）；组件通过 `useQuery` 订阅，数据变化触发响应式更新；Mutation 后可主动失效相关 query 触发重取。
+- **Vue Store**：TanStack Store 是框架无关的细粒度响应式 store；Vue 适配层通过 `useStore` 把 store 的读写映射到 Vue 的 ref/reactive，使组件只订阅用到的 slice，减少无效更新。
+- **为何分开**：服务端状态有「请求、缓存、重试、失效」等通用模式，用 Query 统一处理；客户端状态无此需求，用 Store 更轻量、可控。
 
 ---
 

@@ -2,14 +2,15 @@
 
 ## 📚 目录
 1. [三者是什么](#三者是什么)
-2. [安装与初始化](#安装与初始化)
-3. [@changesets/cli：主流程](#changesetscli主流程)
-4. [@changesets/changelog-github：CHANGELOG 生成](#changesetschangelog-githubchangelog-生成)
-5. [@changesets/git：Git 能力与脚本用法](#changesetsgitgit-能力与脚本用法)
-6. [完整工作流示例](#完整工作流示例)
-7. [CI / GitHub Actions](#ci--github-actions)
-8. [最佳实践与速查](#最佳实践与速查)
-9. [参考链接](#参考链接)
+2. [原理：声明式变更如何驱动版本与发布](#原理声明式变更如何驱动版本与发布)
+3. [安装与初始化](#安装与初始化)
+4. [@changesets/cli：主流程](#changesetscli主流程)
+5. [@changesets/changelog-github：CHANGELOG 生成](#changesetschangelog-githubchangelog-生成)
+6. [@changesets/git：Git 能力与脚本用法](#changesetsgitgit-能力与脚本用法)
+7. [完整工作流示例](#完整工作流示例)
+8. [CI / GitHub Actions](#ci--github-actions)
+9. [最佳实践与速查](#最佳实践与速查)
+10. [参考链接](#参考链接)
 
 ---
 
@@ -26,6 +27,17 @@
 - **CLI** 是入口：负责「声明变更 → 升版本 → 写 CHANGELOG → 发布」整条链路。
 - **changelog-github** 是 CLI 的**可选插件**：通过 `config.json` 的 `changelog` 接入，只参与「怎么写 CHANGELOG」。
 - **git** 被 CLI 内部使用，你在「自定义脚本 / CI 检查」里也会直接调用。
+
+---
+
+## 原理：声明式变更如何驱动版本与发布
+
+Changesets 的核心是：**开发者用「changeset 文件」声明「哪个包、什么类型变更、描述」，CLI 在 version 阶段根据这些声明计算新版本、合并 CHANGELOG，再在 publish 阶段按版本发布**。
+
+1. **声明变更**：`changeset add` 在 `.changeset/` 下生成一个 md 文件，内容指定受影响的包、bump 类型（major/minor/patch）、描述；不直接改 package.json 或 CHANGELOG。
+2. **version 阶段**：`changeset version` 读取所有未消费的 changeset 文件，按「依赖图 + 固定模式」决定每个包的新版本号，更新各包 package.json 的 version，并把对应描述写入各包 CHANGELOG，然后删除或归档已消费的 changeset 文件。
+3. **publish 阶段**：`changeset publish` 对版本已变更的包执行 npm/pnpm publish（或仅打 tag），可选先检查分支、未提交变更等（依赖 @changesets/git）。
+4. **与 git 结合**：通过 @changesets/git 获取当前分支、自某 ref 变更的包、新增 changeset 的 commit 等，用于 CI 里「仅在有 changeset 时发布」或自定义发版脚本。
 
 ---
 

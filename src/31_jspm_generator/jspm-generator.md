@@ -2,7 +2,8 @@
 
 ## 📚 目录
 1. [它解决什么问题](#它解决什么问题)
-2. [核心概念：Import Map](#核心概念import-map)
+2. [原理：Bare Specifier 解析与 Import Map 生成](#原理bare-specifier-解析与-import-map-生成)
+3. [核心概念：Import Map](#核心概念import-map)
 3. [安装与运行前提](#安装与运行前提)
 4. [Generator 基本用法（install / getMap）](#generator-基本用法install--getmap)
 5. [环境条件 env（browser / production / module 等）](#环境条件-envbrowser--production--module-等)
@@ -31,6 +32,16 @@
 - **导入映射“锁定”**：把 import map 当 lockfile，让解析稳定可复现。
 - **CDN 运行**：把 npm 包解析到 `https://ga.jspm.io/...` / jsDelivr / unpkg 等。
 - **本地运行**：把映射解析到本地 `./node_modules/...`（provider = `nodemodules`）。
+
+---
+
+## 原理：Bare Specifier 解析与 Import Map 生成
+
+**核心思路**：浏览器原生 ESM 只认识 URL，不认识 `import 'react'` 这种「裸说明符」。Import Map 的作用就是把 bare specifier 映射到具体 URL；Generator 要做的就是：**解析包名与版本 → 解析 package.json 的 exports/conditions → 得到最终 URL → 写出 import map**。
+
+- **解析流程**：输入 `react` 或 `react@18` → 查 registry（npm）得到包元数据与 `package.json` → 根据 `exports`、`imports` 和当前 env（browser/node、production/development、module 等）选出入口文件 → 再根据 provider（jspm/jsdelivr/unpkg/nodemodules）拼出最终 URL。
+- **条件导出**：Node 与打包器都支持 `exports` 和 `imports` 的条件分支，Generator 复用同一套解析逻辑，保证浏览器端拿到的入口与 Node/打包器一致。
+- **link 与锁文件**：`link` 从源码扫描 `import`/`require`，自动收集依赖再生成映射；`inputMap` 可传入已有 import map 作为「锁文件」，只补缺、不随意升级，保证可复现。
 
 ---
 

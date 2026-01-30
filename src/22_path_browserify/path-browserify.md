@@ -2,11 +2,12 @@
 
 ## 📚 目录
 1. [什么是 path-browserify](#什么是-path-browserify)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：如何在浏览器里实现 path](#原理如何在浏览器里实现-path)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -27,6 +28,17 @@ path-browserify 是 Node.js 内置模块 **path** 的浏览器实现，在打包
 ### 与 Node path 的区别
 - Node 的 path 依赖操作系统与真实文件系统；path-browserify 只做**字符串层面的路径处理**，不访问文件系统。
 - 在浏览器里没有 `__dirname`、`process.cwd()` 等，通常由打包工具注入或改用 `import.meta.url`、静态路径等。
+
+---
+
+## 原理：如何在浏览器里实现 path
+
+path-browserify 的核心是：**只做「路径字符串」的解析与拼接，不依赖 Node 的 fs 或操作系统 API；用纯 JS 实现 join、resolve、dirname、basename、extname 等，按 POSIX 或当前平台约定处理分隔符与规范化**。
+
+1. **纯字符串**：所有 API 的输入输出都是字符串；不访问文件系统，不调用 `fs` 或 `path` 的 Node 专属能力，因此可在浏览器或任意 JS 环境运行。
+2. **与 Node path 对齐**：实现与 Node 的 path 模块相同的函数签名与语义（如 resolve 的拼接顺序、dirname 的边界情况），便于「写一份代码、Node 用 path、浏览器用 path-browserify」。
+3. **分隔符与平台**：内部根据 `sep`、`delimiter` 等处理 Windows/Unix 差异；浏览器端通常按 Unix 风格（`/`）即可，或由打包工具注入平台。
+4. **打包时替换**：构建工具通过 resolve.alias 把 `path` 指到 path-browserify，业务代码仍写 `import path from 'path'`，无需改代码。
 
 ---
 

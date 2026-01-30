@@ -2,7 +2,8 @@
 
 ## 📚 目录
 1. [什么是 workspace.read-manifest](#什么是-workspace-read-manifest)
-2. [安装与引入](#安装与引入)
+2. [原理：YAML 解析与 pnpm workspace 约定](#原理yaml-解析与-pnpm-workspace-约定)
+3. [安装与引入](#安装与引入)
 3. [基础用法](#基础用法)
 4. [API 与类型](#api-与类型)
 5. [pnpm-workspace.yaml 结构](#pnpm-workspaceyaml-结构)
@@ -30,6 +31,16 @@
 ### 前置条件
 - **Node.js**：>= 18.12（见包内 `engines`）
 - 读取的目录下应有 `pnpm-workspace.yaml`，否则会报错（包会从给定 `dir` 查找该文件）
+
+---
+
+## 原理：YAML 解析与 pnpm workspace 约定
+
+**核心思路**：pnpm 的 monorepo 由根目录的 `pnpm-workspace.yaml` 定义「哪些目录算 workspace 包」；read-manifest 只做一件事：**在给定目录下找到该文件并解析成结构化对象**，不执行 install、不遍历子包。
+
+- **文件定位**：从传入的 `dir`（默认 `process.cwd()`）读取 `pnpm-workspace.yaml`；若需「向上查找根目录」则需配合其它包（如从某子包目录找根）。
+- **YAML 解析**：将 YAML 内容解析为 JS 对象，得到 `packages`（如 `['packages/*']`）、`catalog`/`catalogs`、`overrides`、`packageExtensions` 等 pnpm 约定的字段；类型定义与 pnpm 主版本一致，保证工具链兼容。
+- **与 find-packages 的关系**：read-manifest 只产出「清单定义」；要得到每个子包的路径和 package.json，需根据 `packages` 做 glob 再读文件，即 @pnpm/workspace.find-packages 的职责；二者配合可先读 manifest 再解析子包。
 
 ---
 

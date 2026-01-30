@@ -2,7 +2,8 @@
 
 ## 📚 目录
 1. [什么是 @manypkg/get-packages](#什么是-manypkgget-packages)
-2. [安装与引入](#安装与引入)
+2. [原理：Monorepo 根发现与包枚举](#原理monorepo-根发现与包枚举)
+3. [安装与引入](#安装与引入)
 3. [基础用法](#基础用法)
 4. [API 与类型](#api-与类型)
 5. [示例与组合](#示例与组合)
@@ -27,6 +28,16 @@
 - 批量执行：对每个 workspace 包执行 build / test / publish
 - 依赖/版本检查：遍历所有包的 `dependencies`、`version` 等
 - 单包仓库也能用：只有一个包时，会返回根包 + `rootPackage`，行为一致
+
+---
+
+## 原理：Monorepo 根发现与包枚举
+
+**核心思路**：Monorepo 有多种形态（Yarn/npm/pnpm workspace、Lerna、Rush 等），共同点是「根目录有一份 workspace 配置、子包在固定目录下」。get-packages 先**从当前目录向上找 monorepo 根**，再**根据该工具对应的配置文件枚举所有包**，最后读每个包的 `package.json` 得到路径与元数据。
+
+- **根发现**：从 `process.cwd()`（或传入路径）向上遍历，查找 `package.json` 且其内容或同目录存在 `workspaces`、`pnpm-workspace.yaml`、`lerna.json`、`rush.json` 等，找到即视为根；依赖 @manypkg/find-root 等逻辑，保证多包管理器一致。
+- **包枚举**：根据根目录的 workspace 配置（如 `packages: ['packages/*']`）做 glob 或遍历，得到所有子包目录，再对每个目录读 `package.json`，组装成 `Package` 列表；根目录自身也作为 `rootPackage` 加入。
+- **同步/异步**：读文件可用 sync API 或 async，故提供 `getPackagesSync` 与 `getPackages`，内部逻辑相同，仅 I/O 方式不同。
 
 ---
 

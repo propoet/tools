@@ -56,6 +56,17 @@ child_process 里常用的有四个 API，可以看成**两对**：
 
 ---
 
+## 原理：子进程如何被创建与通信
+
+Node 的 child_process 核心是：**通过操作系统 API 创建新进程、把命令与参数传给它、用管道（stdin/stdout/stderr）与父进程通信**。
+
+1. **创建进程**：`spawn` 调用系统 API（如 Unix 的 `fork`+`exec`、Windows 的 `CreateProcess`），在新进程中加载目标可执行文件（如 `git`、`node`），并传入参数数组。
+2. **默认不经过 shell**：`spawn` 不传 `shell: true` 时，直接执行目标程序，参数由 Node 以数组形式传递，避免被 shell 解析，降低注入风险；`exec` 则把整句字符串交给 shell 解释。
+3. **管道通信**：子进程的 stdin/stdout/stderr 与父进程之间通过管道（pipe）连接；父进程可往 stdin 写、从 stdout/stderr 读，或设为 `inherit` 与当前终端共享。
+4. **异步与同步**：异步版本在子进程启动后立即返回，通过事件（`data`、`close`）或 Promise 拿到结果；Sync 版本在子进程结束前阻塞当前线程。
+
+---
+
 ## 三、四个 API 各干什么、怎么用
 
 ### 1. exec —— 异步 + 整句命令 + 经 shell

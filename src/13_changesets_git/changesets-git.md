@@ -4,11 +4,12 @@
 
 ## 📚 目录
 1. [什么是 @changesets/git](#什么是-changesetsgit)
-2. [安装与引入](#安装与引入)
-3. [基础用法](#基础用法)
-4. [示例与组合](#示例与组合)
-5. [高级特性](#高级特性)
-6. [最佳实践](#最佳实践)
+2. [原理：如何封装 Git 供 changesets 使用](#原理如何封装-git-供-changesets-使用)
+3. [安装与引入](#安装与引入)
+4. [基础用法](#基础用法)
+5. [示例与组合](#示例与组合)
+6. [高级特性](#高级特性)
+7. [最佳实践](#最佳实践)
 
 ---
 
@@ -25,6 +26,17 @@
 - 发版前检查是否有未提交变更、是否在允许的分支上
 - 在 CI 里获取当前分支、commit、tag，决定是否发布
 - 与 @changesets/cli 一起用，实现“生成 changeset → 更新版本 → 发布”的自动化
+
+---
+
+## 原理：如何封装 Git 供 changesets 使用
+
+@changesets/git 的核心是：**在 Node 里通过 `child_process` 执行 git 命令（或使用 git 库），把 stdout 解析成结构化信息（如当前分支名、commit 列表、变更的包列表），供 changesets 的 version/publish 流程和自定义脚本使用**。
+
+1. **执行 git**：内部用 `spawn`/`execSync` 调用 `git` 可执行文件，传入子命令与参数（如 `git branch --show-current`、`git diff --name-only ref`），获取标准输出。
+2. **解析输出**：将 git 输出的文本解析成业务需要的结构，如「当前分支」字符串、「自某 ref 以来变更的文件列表」；再根据文件路径与 monorepo 包目录的对应关系，得到「变更的包列表」。
+3. **changeset 相关**：如「获取新增 changeset 的 commit」：通过 git log 或 diff 找到修改 `.changeset/` 的 commit，便于 CI 判断「是否有 changeset 待消费」。
+4. **统一错误**：git 命令失败时统一抛错或返回约定格式，便于调用方判断「是否有未提交变更、是否在允许的分支上」等。
 
 ---
 

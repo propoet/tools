@@ -2,16 +2,17 @@
 
 ## 📚 目录
 1. [什么是 Commitlint](#什么是-commitlint)
-2. [Conventional Commits 格式](#conventional-commits-格式)
-3. [安装与基础配置](#安装与基础配置)
-4. [@commitlint/config-conventional 规则说明](#commitlintconfig-conventional-规则说明)
-5. [集成到 Git Hooks（Husky）](#集成到-git-hookshusky)
-6. [集成到 Git Hooks（直接方式）](#集成到-git-hooks直接方式)
-7. [配置文件详解](#配置文件详解)
-8. [自定义规则](#自定义规则)
-9. [CI/CD 集成](#cicd-集成)
-10. [常见问题与最佳实践](#常见问题与最佳实践)
-11. [参考链接](#参考链接)
+2. [原理：如何检查提交信息](#原理如何检查提交信息)
+3. [Conventional Commits 格式](#conventional-commits-格式)
+4. [安装与基础配置](#安装与基础配置)
+5. [@commitlint/config-conventional 规则说明](#commitlintconfig-conventional-规则说明)
+6. [集成到 Git Hooks（Husky）](#集成到-git-hookshusky)
+7. [集成到 Git Hooks（直接方式）](#集成到-git-hooks直接方式)
+8. [配置文件详解](#配置文件详解)
+9. [自定义规则](#自定义规则)
+10. [CI/CD 集成](#cicd-集成)
+11. [常见问题与最佳实践](#常见问题与最佳实践)
+12. [参考链接](#参考链接)
 
 ---
 
@@ -33,6 +34,17 @@
 |----|------|
 | **@commitlint/cli** | 命令行工具，执行检查逻辑 |
 | **@commitlint/config-conventional** | 基于 Conventional Commits 的预设配置 |
+
+---
+
+## 原理：如何检查提交信息
+
+Commitlint 的核心是：**读取本次提交的 message（如从 git hook 或 CI 传入），按配置的规则（正则、Conventional 格式等）解析并校验，不通过则报错并退出非零，阻止提交或合并**。
+
+1. **获取 message**：在 git commit-msg hook 里，通过 `git log -1 --pretty=%B` 或读取传入的临时文件得到本次提交的完整 message；在 CI 里可对 PR 的每个 commit 或合并后的 message 做同样校验。
+2. **解析与规则**：按 Conventional Commits 拆成 type、scope、subject、body、footer；或按自定义正则校验；config-conventional 规定 type 枚举（feat、fix、docs 等）、subject 长度、body 格式等。
+3. **校验结果**：若某条规则不满足，输出错误信息并 process.exit(1)；hook 里 exit 非零会令 git 拒绝完成提交；CI 里则令流水线失败。
+4. **与 Husky 结合**：Husky 在 `.git/hooks/commit-msg` 中调用 `commitlint`，把当前提交的 message 通过 stdin 或文件传给 commitlint，实现「每次 commit 自动校验」。
 
 ---
 
