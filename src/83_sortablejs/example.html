@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>sortablejs 示例</title>
+  <style>
+    ul { list-style: none; padding: 0; max-width: 320px; }
+    li { padding: 12px 16px; margin: 4px 0; background: #f0f0f0; border-radius: 8px; cursor: grab; }
+    li:active { cursor: grabbing; }
+    .sortable-ghost { opacity: 0.4; background: #ddd; }
+  </style>
+</head>
+<body>
+  <h1>SortableJS 示例</h1>
+  <p>拖拽列表项改变顺序。</p>
+  <ul id="list">
+    <li>Item 1</li>
+    <li>Item 2</li>
+    <li>Item 3</li>
+    <li>Item 4</li>
+  </ul>
+  <script type="module">
+    import Sortable from 'sortablejs';
+
+    const el = document.getElementById('list');
+    const sortable = new Sortable(el, {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      onEnd(evt) {
+        console.log('顺序变化:', evt.oldIndex, '->', evt.newIndex);
+      },
+    });
+  </script>
+</body>
+</html>

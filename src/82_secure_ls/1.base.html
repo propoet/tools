@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>secure-ls 示例（浏览器中打开）</title>
+</head>
+<body>
+  <h1>secure-ls 示例</h1>
+  <p>在浏览器中打开此页面，打开控制台查看输出。</p>
+  <script type="module">
+    // 浏览器中运行：需在已安装 secure-ls 的项目中通过打包工具打开此页，或使用 CDN
+    // API 用法：new SecureLS(options) -> ls.set(key, value) / ls.get(key) / ls.remove(key)
+    (async () => {
+      try {
+        const SecureLS = (await import('https://esm.run/secure-ls')).default;
+        const ls = new SecureLS({ encodingType: 'base64' });
+        ls.set('demo-key', { name: 'demo', time: Date.now() });
+        console.log('get:', ls.get('demo-key'));
+        ls.remove('demo-key');
+      } catch (e) {
+        console.log('若 ESM 加载失败，请在本地项目中 import SecureLS 后运行：', e.message);
+      }
+    })();
+  </script>
+</body>
+</html>

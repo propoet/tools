@@ -4,13 +4,13 @@
 1. [什么是 Playwright](#什么是-playwright)
 2. [原理：浏览器驱动与 Web-First 自动化](#原理浏览器驱动与-web-first-自动化)
 3. [安装与两种用法](#安装与两种用法)
-3. [Playwright Test（推荐 E2E）](#playwright-test推荐-e2e)
-4. [Playwright Library（自动化脚本）](#playwright-library自动化脚本)
-5. [Locators 与常用操作](#locators-与常用操作)
-6. [断言与 Hooks](#断言与-hooks)
-7. [运行与调试](#运行与调试)
-8. [配置与 CI](#配置与-ci)
-9. [最佳实践](#最佳实践)
+4. [Playwright Test（推荐 E2E）](#playwright-test推荐-e2e)
+5. [Playwright Library（自动化脚本）](#playwright-library自动化脚本)
+6. [Locators 与常用操作](#locators-与常用操作)
+7. [断言与 Hooks](#断言与-hooks)
+8. [运行与调试](#运行与调试)
+9. [配置与 CI](#配置与-ci)
+10. [最佳实践](#最佳实践)
 
 ---
 
@@ -38,6 +38,17 @@ Playwright 是微软开源的**端到端测试与浏览器自动化**框架，�
 - 多浏览器/多项目矩阵测试
 - 截图、PDF、录屏、性能抓取（Library）
 - 文档站、后台的自动化巡检（Test）
+
+### 与其它工具对比（简要）
+
+| 项目 | Playwright | Puppeteer | Cypress | Selenium |
+|------|------------|-----------|---------|----------|
+| 浏览器 | Chromium / Firefox / WebKit | 主要 Chromium | 基于 Chromium 的 Electron | 多浏览器（需各自驱动） |
+| API 风格 | 统一多浏览器、Locator 自动等待 | Chrome 专用、需手写等待 | 链式、时间旅行调试 | 经典 WebDriver API |
+| 隔离 | Context 级隔离、并行稳 | 依赖自己管理 | 运行器内隔离 | 进程/会话隔离 |
+| 适用 | E2E + 脚本、CI、多端 | 爬虫、Chrome 自动化 | 前端 E2E、开发体验 | 企业多浏览器、老项目 |
+
+选 Playwright 时：要**多浏览器 + 稳定断言 + 现代 API**；仅做 Chrome 脚本可考虑 Puppeteer；偏重前端单页、重调试体验可考虑 Cypress。
 
 ---
 

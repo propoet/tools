@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>medium-zoom 示例</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+    img[data-zoomable] { cursor: zoom-in; max-width: 100%; height: auto; border-radius: 8px; }
+    .medium-zoom-overlay, .medium-zoom-image--opened { z-index: 999; }
+  </style>
+</head>
+<body>
+  <h1>medium-zoom 示例</h1>
+  <p>点击下方图片可放大，点击遮罩或按 Esc 关闭。</p>
+  <img
+    src="https://picsum.photos/400/300"
+    data-zoom-src="https://picsum.photos/1200/900"
+    data-zoomable
+    alt="示例图"
+    width="400"
+    height="300"
+  />
+
+  <script type="module">
+    import mediumZoom from 'medium-zoom';
+
+    const zoom = mediumZoom('[data-zoomable]', {
+      margin: 24,
+      background: 'rgba(0,0,0,0.85)',
+      scrollOffset: 0,
+    });
+
+    zoom.on('opened', () => console.log('放大已打开'));
+    zoom.on('closed', () => console.log('放大已关闭'));
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>watermark-js-plus 示例</title>
+  <style>
+    body { font-family: sans-serif; padding: 24px; }
+    #app { min-height: 200px; position: relative; }
+  </style>
+</head>
+<body>
+  <h1>watermark-js-plus 示例</h1>
+  <p>水印会铺满 body；若未加载到库，请在本项目中安装 watermark-js-plus 后通过打包工具打开。</p>
+  <div id="app">页面内容区域</div>
+
+  <script type="module">
+    (async () => {
+      try {
+        const { Watermark } = await import('https://esm.run/watermark-js-plus');
+        const wm = new Watermark({
+          content: '示例水印',
+          width: 200,
+          height: 200,
+          rotate: -22,
+          alpha: 0.1,
+        });
+        wm.create();
+        window.__watermark = wm; // 控制台可调用 __watermark.destroy() 移除
+      } catch (e) {
+        console.log('若 ESM 加载失败，请在本地项目中 import Watermark 后运行。', e.message);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "type-check": "vue-tsc --noEmit",
+    "build": "vue-tsc --noEmit && vite build"
+  }
+}
